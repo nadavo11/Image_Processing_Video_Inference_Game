@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 
 print("hello github")
+print("hello github2")
 
 # initializing and starting multi - thread webcam input stream
 webcam_stream = WebcamStream(stream_id=0)  # 0 id for main camera
