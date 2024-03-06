@@ -54,18 +54,20 @@ def scan_background(webcam_stream):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 webcam_stream.quit()
 
-        for i in range(500):
+        for i in range(5000):
             frame = background.copy()
             # on the left side of the frame, write text
             cv2.putText(frame, f'This Is The Background : OK ? {(500 - i)//50}', (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
             # Display the resulting frame
             cv2.imshow('output', frame)
+
             # quit the scan
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 webcam_stream.quit()
-            
-        accepted = int(input("Enter 1 for OK, or 0 to retry: "))
-        if accepted == 1 :
-            break
+            if cv2.waitKey(1) & 0xFF == ord('1'):
+                return background
+            if cv2.waitKey(1) & 0xFF == ord('0'):
+                break
+
 
     return background
