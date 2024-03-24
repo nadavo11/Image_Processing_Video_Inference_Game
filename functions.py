@@ -19,13 +19,13 @@ def filter_player(frame, background):
     diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
 
     # Apply Gaussian filter to smooth the image
-    diff_smoothed = cv2.GaussianBlur(diff_gray, (5, 5), 0)
-
+    diff_smoothed = cv2.GaussianBlur(diff_gray, (15, 15), 10)
+    
     # Apply Median filter to further reduce noise
-    diff_smoothed = cv2.medianBlur(diff_smoothed, 5)
+    diff_smoothed = cv2.medianBlur(diff_smoothed, 15)
 
     # Threshold the diff image so that we get the foreground
-    _, thresh = cv2.threshold(diff_smoothed, 25, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(diff_smoothed, 20, 255, cv2.THRESH_BINARY)
 
     return thresh
 
@@ -68,6 +68,5 @@ def scan_background(webcam_stream):
                 return background
             if cv2.waitKey(1) & 0xFF == ord('0'):
                 break
-
 
     return background

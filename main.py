@@ -47,9 +47,13 @@ def player_control(mask):
 
     if lean == 'left':
         print("left")
-        keyboard.pressNrelease(symb_to_hex["left"])
+        keyboard.pressKey("left")
+    else:
+        keyboard.releaseKey("left")
     if lean == 'right':
-        keyboard.pressNrelease(symb_to_hex["right"])
+        keyboard.pressKey("right")
+    else:
+        keyboard.releaseKey("right")
 
     # add controls here
 
@@ -64,6 +68,7 @@ def play():
 
         # processing stage
         mask = filter_player(frame, background)
+
         # display
         cv2.imshow('output', mask)
         player_control(mask)
