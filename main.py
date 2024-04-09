@@ -3,6 +3,7 @@ from webcam_stream import WebcamStream
 from functions import filter_player, scan_background
 import cv2
 import numpy as np
+import time
 
 # initializing and starting multi - thread webcam input stream
 webcam_stream = WebcamStream(stream_id=0)  # 0 id for main camera
@@ -58,28 +59,29 @@ def player_control(mask):
     # add controls here
 
 
-def play():
-    # setup
-
-    # loop
-    while (True):
+def play(webcam_stream, background):
+    while True:
         # Capture the video frame
         frame = webcam_stream.read()
-
-        # processing stage
+        # Process the frame
         mask = filter_player(frame, background)
+        #grid, mask = process_frame(frame, background)
 
-        # display
+        # Display the output
         cv2.imshow('output', mask)
         player_control(mask)
 
-        # press q to quit
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            webcam_stream.quit()
+        # Handle user input
+        key = cv2.waitKey(1)
+        if key & 0xFF == ord('q'):
+            break
+        elif key & 0xFF == ord('e'):
+            # Assuming get_EXPOSURE is a method of webcam_stream that either prints or sets the exposure
+            webcam_stream.get_EXPOSURE()
 
 
 background = scan_background(webcam_stream)
-play()
+play(webcam_stream, background)
 # After the loop release the cap object
 webcam_stream.vcap.release()
 # Destroy all the windows

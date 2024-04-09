@@ -22,7 +22,7 @@ class WebcamStream:
     # initialization method
     def __init__(self, stream_id=0):
         self.stream_id = stream_id  # default is 1 for main camera
-
+        self.EXPOSURE_VALUE = -7
         # opening video capture stream
         self.vcap = cv2.VideoCapture(self.stream_id)
         if self.vcap.isOpened() is False:
@@ -43,6 +43,7 @@ class WebcamStream:
         self.t = Thread(target=self.update, args=())
 
         self.t.daemon = True  # daemon threads run in background
+
 
     # method to start thread
     def start(self):
@@ -79,6 +80,21 @@ class WebcamStream:
         # Destroy all the windows
         cv2.destroyAllWindows()
         exit(0)
+
+    def get_EXPOSURE(self):
+        # Get the current exposure value
+        exposure_value_us = self.vcap.get(cv2.CAP_PROP_EXPOSURE)
+
+        # Print the current exposure value (in microseconds)
+        print("Current exposure value:", exposure_value_us, "us")
+        return exposure_value_us
+
+    def set_EXPOSURE(self,Exp):
+        self.vcap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
+        self.EXPOSURE_VALUE = Exp
+        self.vcap.set(cv2.CAP_PROP_EXPOSURE, self.EXPOSURE_VALUE)
+        print("Set current exposure value:", Exp, "us")
+
 
     # method to play the game with the user's update function
 
