@@ -1,14 +1,15 @@
-from keyboard_infr import KeyBoardInterface, symb_to_hex
+from keyboard_interface import KeyboardInterface
 from webcam_stream import WebcamStream
 from functions import filter_player, scan_background
 import cv2
 import numpy as np
+from pynput.keyboard import Key, Controller, Listener
 
 # initializing and starting multi - thread webcam input stream
 webcam_stream = WebcamStream(stream_id=0)  # 0 id for main camera
 webcam_stream.start()
 
-keyboard = KeyBoardInterface()
+keyboard = KeyboardInterface()
 
 frame = webcam_stream.read()
 H, W = frame.shape[:2]
@@ -47,13 +48,14 @@ def player_control(mask):
 
     if lean == 'left':
         print("left")
-        keyboard.pressKey("left")
-    else:
-        keyboard.releaseKey("left")
+        keyboard.press_and_release(Key.left)
+    # else:
+    #     keyboard.on_release("l")
     if lean == 'right':
-        keyboard.pressKey("right")
-    else:
-        keyboard.releaseKey("right")
+        print("right")
+        keyboard.press_and_release(Key.right)
+    # else:
+    #     keyboard.on_release("r")
 
     # add controls here
 

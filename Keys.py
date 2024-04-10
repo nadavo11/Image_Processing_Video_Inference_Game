@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 from time import sleep
-import keyboard_infr
+import keyboard_infrlll
 from keyboard_infr import KeyBoardInterface
 if __name__ == '__main__':
     print("hi")
