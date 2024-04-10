@@ -23,6 +23,8 @@ def filter_player(frame, background):
     
     # Apply Median filter to further reduce noise
     diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
+    diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
+    diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
 
     # Threshold the diff image so that we get the foreground
     _, thresh = cv2.threshold(diff_smoothed, 25, 255, cv2.THRESH_BINARY)
@@ -75,3 +77,67 @@ def scan_background(webcam_stream):
             break
 
     return background
+
+def grid_output(frame, background):
+    mask = filter_player(frame, background)
+    #clean_mask, edges = create_clean_mask(mask)
+    # Convert masks to BGR for display purposes
+    binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+    binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+    #edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+
+    # Prepare frames for display
+    frames = [background, frame, binary_image1, binary_image2]
+    resized_frames = [cv2.resize(frame, (320, 240)) for frame in frames]
+
+    # Combine frames into a grid
+    top_row = np.hstack(resized_frames[:2])
+    bottom_row = np.hstack(resized_frames[2:])
+    grid = np.vstack((top_row, bottom_row))
+
+    return grid, mask
+
+
+######################
+def get_player_position(mask):
+    """
+    :param mask: binary mask
+    :return: (center_x, center_y)
+    """
+    # Find indices where we have mass
+    mass_x, mass_y = np.where(mask == 255)
+
+    # x,y are the center of x indices and y indices of mass pixels
+    center_of_mass = (np.average(mass_x), np.average(mass_y))
+    return center_of_mass
+
+def player_lean(player_position, w = W, th = 5):
+    # calculate the threshold precentage
+    th = w*th//100
+    # height
+    x = player_position[0]
+    # width
+    y = player_position[1]
+
+    if y > W//2 + th:
+        return 'right'
+    if y < W//2 - th:
+        return 'left'
+
+def player_control(mask,keyboard):
+    W = mask.shape[1]
+    position = get_player_position(mask)
+
+    # lean right and left
+    lean = player_lean(position, W)
+
+    if lean == 'left':
+        print("left")
+        keyboard.set_hexKeyCode("left")
+        keyboard.pressNrelease()
+    if lean == 'right':
+        keyboard.set_hexKeyCode("right")
+        keyboard.pressNrelease()
+
+
+    # add controls here

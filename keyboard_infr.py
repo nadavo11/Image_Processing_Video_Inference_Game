@@ -1,5 +1,7 @@
 import ctypes
 import time
+from threading import Thread, Event ##iris 10/04
+from queue import Queue ##iris 10/04
 
 # Accessing the Windows API to send inputs
 SendInput = ctypes.windll.user32.SendInput
@@ -44,14 +46,21 @@ class Input(ctypes.Structure):
 
 class KeyBoardInterface:
     def __init__(self):
-        pass
+        def __init__(self, hexKeyCode): ##iris 10/04
+            self.hexKeyCode = hexKeyCode  # Store hexKeyCode as an instance attribute
 
-    def pressKey(self, hexKeyCode):
+            # Setup the thread to call a method that uses self.hexKeyCode
+            self.t = Thread(target=self.pressNrelease)  # Note: Don't call the method with ()
+            self.t.daemon = True
+            self.t.start()
+            pass
+
+    def pressKey(self):
         """
         Simulates a key press.
         :param hexKeyCode: Hexadecimal code of the key to press.
         """
-        key = symb_to_hex[hexKeyCode]
+        key = symb_to_hex[self.hexKeyCode]
 
         # Initialize an extra information field. This is often used to specify an additional
         # 32-bit value associated with the keystroke, such as when the keystroke is generated
@@ -81,13 +90,13 @@ class KeyBoardInterface:
         # and the size of our input structure. This function call is what simulates the key press.
         ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-    def releaseKey(self, hexKeyCode):
+    def releaseKey(self):
         """
         Simulates a key release.
 
         :param hexKeyCode: Hexadecimal code of the key to release.
         """
-        key = symb_to_hex[hexKeyCode]
+        key = symb_to_hex[self.hexKeyCode]
 
         extra = ctypes.c_ulong(0)
         ii_ = Input_I()
@@ -95,18 +104,20 @@ class KeyBoardInterface:
         x = Input(ctypes.c_ulong(1), ii_)
         ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
 
-    def pressNrelease(self, hexKeyCode, delay=0.01):
+    def set_hexKeyCode(self,hexKeyCode):
+        self.hexKeyCode = hexKeyCode
+    def pressNrelease(self, delay=0.01):
         """
         Simulates pressing and releasing a key with a delay in between.
 
         :param hexKeyCode: Hexadecimal code of the key to press and release.
         :param delay: Delay between press and release in seconds.
         """
-        key = symb_to_hex[hexKeyCode]
+        #key = symb_to_hex[self.hexKeyCode]
 
-        self.pressKey(key)
+        self.pressKey()
         time.sleep(delay)
-        self.releaseKey(key)
+        self.releaseKey()
 
 
 # Mapping of keys to their directX scan codes
