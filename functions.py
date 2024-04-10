@@ -3,6 +3,8 @@ from webcam_stream import WebcamStream
 import cv2
 import numpy as np
 import time
+from scipy import ndimage
+from pynput.keyboard import Key, Controller, Listener
 
 # initializing and starting multi - thread webcam input stream
 webcam_stream = WebcamStream(stream_id=0)  # 0 id for main camera
@@ -81,13 +83,27 @@ def scan_background(webcam_stream):
 def grid_output(frame, background):
     mask = filter_player(frame, background)
     #clean_mask, edges = create_clean_mask(mask)
+    center_of_mass, width, height, percentage = get_player_position(mask)
+    frame_with_rectangle = frame.copy()  # Copy the frame
+    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
+        center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
+        # Draw a green rectangle around the player's center of mass
+        pt1 = (center_of_mass[0] - width//2, center_of_mass[1] - height//2)
+        pt2 = (center_of_mass[0] + width//2, center_of_mass[1] + height//2)
+        cv2.rectangle(frame_with_rectangle, pt1, pt2, (0, 255, 0), 2)  # Green color, thickness 2
+
+
+    # Draw a red X at the player's center of mass
+        frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_mass, (0, 0, 255),
+                                                  markerType=cv2.MARKER_CROSS, markerSize=10, thickness=2)
+
     # Convert masks to BGR for display purposes
     binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     #edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
 
     # Prepare frames for display
-    frames = [background, frame, binary_image1, binary_image2]
+    frames = [background, frame, frame_with_rectangle, binary_image2]
     resized_frames = [cv2.resize(frame, (320, 240)) for frame in frames]
 
     # Combine frames into a grid
@@ -99,22 +115,64 @@ def grid_output(frame, background):
 
 
 ######################
-def get_player_position(mask):
+
+def get_player_position(mask,outlier_std_threshold=5):
     """
     :param mask: binary mask
     :return: (center_x, center_y)
     """
     # Find indices where we have mass
-    mass_x, mass_y = np.where(mask == 255)
+    mass_h, mass_w = np.where(mask == 255)
+
 
     # x,y are the center of x indices and y indices of mass pixels
-    center_of_mass = (np.average(mass_x), np.average(mass_y))
-    return center_of_mass
+    center_of_mass = (np.average(mass_w), np.average(mass_h)) #ndimage.measurements.center_of_mass(mask)#(np.average(mass_x), np.average(mass_y))
+
+    if len(mass_w) < 10 or len(mass_h) < 10:
+        #center_of_mass = (mask.shape[0]//2,mask.shape[1]//2)
+        return center_of_mass, 10, 10, 0
+
+    # Calculate distances of each pixel from the center of mass
+    distances = np.sqrt((mass_h - center_of_mass[1]) ** 2 + (mass_w - center_of_mass[0]) ** 2)
+
+    # Filter out outliers based on the standard deviation threshold
+    std_dev = np.std(distances)
+    #print("std_dev=",std_dev)
+    main_mass_indices = np.where(distances <= outlier_std_threshold * std_dev)
+
+    #mass_x_for_std = mass_x - center_of_mass[0]
+    #mass_y_for_std = mass_y - center_of_mass[1]
+    #std_x = np.std(mass_x_for_std)
+    #std_y = np.std(mass_y_for_std)
+    # Filter out outliers based on the threshold
+    #distances =
+
+    # Use only main mass indices to calculate width and height
+    main_mass_w = mass_w[main_mass_indices]
+    main_mass_h = mass_h[main_mass_indices]
+
+
+
+    # Calculate percentage of mask pixels being equal to 1
+    total_pixels = mask.shape[0] * mask.shape[1]
+    ones_count = np.count_nonzero(mask)
+    percentage = (ones_count / total_pixels) * 100
+
+    # Calculate width and height of the rectangle
+    if len(main_mass_w) < 50 or len(main_mass_h) < 50:
+        width = 50
+        height = 50
+        return center_of_mass, width, height, percentage
+    width = np.max(main_mass_w) - np.min(main_mass_w)
+    height = np.max(main_mass_h) - np.min(main_mass_h)
+
+    return center_of_mass, width, height, percentage
 
 def player_lean(player_position, w = W, th = 5):
     # calculate the threshold precentage
     th = w*th//100
     # height
+    #print("player_position=",player_position)
     x = player_position[0]
     # width
     y = player_position[1]
@@ -126,10 +184,10 @@ def player_lean(player_position, w = W, th = 5):
 
 def player_control(mask,keyboard):
     W = mask.shape[1]
-    position = get_player_position(mask)
+    center_of_mass, width, height, percentage = get_player_position(mask)
 
     # lean right and left
-    lean = player_lean(position, W)
+    lean = player_lean(center_of_mass, W)
 
     if lean == 'left':
         print("left")
@@ -138,6 +196,17 @@ def player_control(mask,keyboard):
     if lean == 'right':
         keyboard.set_hexKeyCode("right")
         keyboard.pressNrelease()
-
-
+    '''
+    if lean == 'left':
+        print("left")
+        keyboard.press_and_release(Key.left)
+    # else:
+    #     keyboard.on_release("l")
+    if lean == 'right':
+        print("right")
+        keyboard.press_and_release(Key.right)
+    # else:
+    #     keyboard.on_release("r")
+    '''
     # add controls here
+
