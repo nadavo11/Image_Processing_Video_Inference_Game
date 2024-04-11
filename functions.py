@@ -96,7 +96,26 @@ def grid_output(frame, background):
     # Draw a red X at the player's center of mass
         frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_mass, (0, 0, 255),
                                                   markerType=cv2.MARKER_CROSS, markerSize=10, thickness=2)
+        region =((center_of_mass[0] - width // 2,
+                 center_of_mass[1] - height // 2),
+                 (center_of_mass[0] + width // 2,
+                 center_of_mass[1] ))
+        cv2.rectangle(frame_with_rectangle,
+                      region[0], region[1], (0, 150, 150), 2)  # Green color, thickness 2
 
+        msk_region = mask[:center_of_mass[0], :]
+        region_h = region[1][0] - region[0][0]
+
+        uppermass_h, uppermass_w = np.where(msk_region == 255)
+
+        # x,y are the center of x indices and y indices of mass pixels
+        center_of_upper_mass = (np.average(uppermass_w), np.average(uppermass_h))
+        # round the center of mass
+        if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
+            center_of_upper_mass = (round(center_of_upper_mass[0]), round(center_of_upper_mass[1]))
+
+            # draw a red X at the player's center of upper mass
+            frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_upper_mass, (0, 0, 255),2)
     # Convert masks to BGR for display purposes
     binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
@@ -168,15 +187,25 @@ def get_player_position(mask,outlier_std_threshold=5):
 
     return center_of_mass, width, height, percentage
 
-def player_lean(player_position, w = W, th = 5):
+def player_lean(player_position, w = W, th = 5,mask = None,region = (0,0,H,W)):
     # calculate the threshold precentage
     th = w*th//100
     # height
-    #print("player_position=",player_position)
     x = player_position[0]
     # width
     y = player_position[1]
+    # operate in the region of the player's upper body
+    # crop the image
+    if not mask:
+        return
+    msk_region = mask[region[0][0]:region[1][0], region[1][0]:region[1][1]]
+    region_h = region[1][0] - region[0][0]
 
+    uppermass_h, uppermass_w = np.where(msk_region == 255)
+
+    # x,y are the center of x indices and y indices of mass pixels
+    center_of_upper_mass = (np.average(uppermass_h), np.average(uppermass_w))
+    return center_of_upper_mass
     if y > W//2 + th:
         return 'right'
     if y < W//2 - th:
@@ -185,17 +214,21 @@ def player_lean(player_position, w = W, th = 5):
 def player_control(mask,keyboard):
     W = mask.shape[1]
     center_of_mass, width, height, percentage = get_player_position(mask)
-
+    lean = 'center'
     # lean right and left
-    lean = player_lean(center_of_mass, W)
+    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
 
+        lean = player_lean(center_of_mass,mask, W,region =((center_of_mass[0] - width // 2,
+                                                            center_of_mass[1] - height // 2),
+                                                           (center_of_mass[0] + width // 2,
+                                                            center_of_mass[1] )))
+    return lean
     if lean == 'left':
         print("left")
-        keyboard.set_hexKeyCode("left")
-        keyboard.pressNrelease()
+        keyboard.press_and_release(Key.left)
     if lean == 'right':
-        keyboard.set_hexKeyCode("right")
-        keyboard.pressNrelease()
+        print("right")
+        keyboard.press_and_release(Key.right)
     '''
     if lean == 'left':
         print("left")

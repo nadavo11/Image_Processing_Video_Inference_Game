@@ -1,4 +1,5 @@
 from keyboard_infr import KeyBoardInterface, symb_to_hex #nadav changed
+from keyboard_interface import KeyboardInterface
 #from keyboard_interface import KeyboardInterface
 from webcam_stream import WebcamStream
 from functions import filter_player, scan_background, grid_output,player_control,player_lean,get_player_position
@@ -11,8 +12,8 @@ import trash_functions
 webcam_stream = WebcamStream(stream_id=0)  # 0 id for main camera
 webcam_stream.start()
 
-keyboard = KeyBoardInterface() # nadav changed
-#keyboard = KeyboardInterface()
+#keyboard = KeyBoardInterface() # nadav changed
+keyboard = KeyboardInterface()
 
 frame = webcam_stream.read()
 H, W = frame.shape[:2]
@@ -29,7 +30,8 @@ def play(webcam_stream, background):
 
         # Display the output
         cv2.imshow('output', grid)
-        player_control(mask,keyboard)
+        player_control(mask, keyboard)
+
 
         # Handle user input
         key = cv2.waitKey(1)
