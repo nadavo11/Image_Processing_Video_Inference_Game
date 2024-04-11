@@ -77,8 +77,8 @@ def scan_background(webcam_stream):
     return background
 
 
-def draw_rectangle(frame, mask):
-    center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
+def draw_rectangle(frame, mask,center_of_mass,center_of_upper_mass, width, height):
+    #center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
     frame_with_rectangle = frame.copy()  # Copy the frame
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
         center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
@@ -99,26 +99,7 @@ def draw_rectangle(frame, mask):
 
         # Center of mass order (W,H)!!
         # Mask order (H,W) !!
-        #msk_region = mask[:center_of_mass[0], :]
-        #region_h = region[1][0] - region[0][0]
-        #iris
-        # First, create a zero-filled array of the same shape as mask
-        mask_region = np.zeros_like(mask)
 
-        # Calculate the rectangle boundaries
-        top = max(center_of_mass[1] - height // 2, 0)  # Ensure top is not less than 0
-        bottom = min(center_of_mass[1], mask.shape[0])  # Ensure bottom does not exceed mask height
-        left = max(center_of_mass[0] - width // 2, 0)  # Ensure left is not less than 0
-        right = min(center_of_mass[0] + width // 2, mask.shape[1])  # Ensure right does not exceed mask width
-
-        # Replace the region within the bounds with the corresponding values from the original mask
-        mask_region[top:bottom, left:right] = mask[top:bottom, left:right]
-        #iris
-
-        uppermass_h, uppermass_w = np.where(mask_region == 255)
-
-        # x,y are the center of x indices and y indices of mass pixels
-        center_of_upper_mass = (np.average(uppermass_w), np.average(uppermass_h))
         # round the center of mass
         if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
             center_of_upper_mass = (round(center_of_upper_mass[0]), round(center_of_upper_mass[1]))
@@ -132,16 +113,16 @@ def draw_rectangle(frame, mask):
 def grid_output(frame, background):
     mask = filter_player(frame, background)
     # clean_mask, edges = create_clean_mask(mask)
-    frame_with_rectangle = draw_rectangle(frame, mask)
+
 
     # Convert masks to BGR for display purposes
     binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-
+    frame_with_rectangle = frame.copy()
     center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
         W = mask.shape[1] ### delete later
-        lean = Player_Position.player_lean(center_of_mass,W, mask=mask, th=2, region=((center_of_mass[0] - width // 2,
+        lean, center_of_upper_mass = Player_Position.player_lean(center_of_mass,width, height,W, mask=mask, th=2, region=((center_of_mass[0] - width // 2,
                                                                                  center_of_mass[1] - height // 2),
                                                                                 (center_of_mass[0] + width // 2,
                                                                                  center_of_mass[1])))
@@ -152,7 +133,7 @@ def grid_output(frame, background):
             # paint binary image2 white pixels red
             binary_image2[mask == 255] = [0,0,255]
         # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-
+        frame_with_rectangle = draw_rectangle(frame, mask,center_of_mass,center_of_upper_mass, width, height)
     # Prepare frames for display
     frames = [background, frame, frame_with_rectangle, binary_image2]
     resized_frames = [cv2.resize(frame, (320, 240)) for frame in frames]

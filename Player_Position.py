@@ -5,6 +5,7 @@ import numpy as np
 import time
 from scipy import ndimage
 from pynput.keyboard import Key, Controller, Listener
+import Frames_Process
 
 def get_player_position(mask,outlier_std_threshold=5):
     """
@@ -45,38 +46,36 @@ def get_player_position(mask,outlier_std_threshold=5):
     width = np.max(main_mass_w) - np.min(main_mass_w)
     height = np.max(main_mass_h) - np.min(main_mass_h)
 
+    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
+        center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1])) ## cancel if you want the accuracy
     return center_of_mass, width, height, percentage
 
-def player_lean(player_position, w = 640 , th = 2,mask = None,region = (0,0,2,2)):
+def player_squat():
+    return 0
+def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None,region = (0,0,2,2)):
     # calculate the threshold precentage
     #print("W=",w)
     th = w*th//100
     # height
-    x = player_position[0]
+    x = center_of_mass[0]
     # width
-    y = player_position[1]
+    y = center_of_mass[1]
     # operate in the region of the player's upper body
-    # crop the image
     if mask is None:
         return
     # TODO: make this work:
-    # round region
-    # region = ((round(region[0][0]),round(region[0][1])),(round(region[1][0]),round(region[1][1])))
-    # msk_region = mask[region[1][1]:region[1][1], region[0][0]:region[0][1]]
-    region_h = region[1][0] - region[0][0]
 
-    msk_region = mask[:round(x), :]
-    region_h = region[1][0] - region[0][0]
+    mask_region = Region_mask(mask,center_of_mass,height,width)
 
-    uppermass_h, uppermass_w = np.where(msk_region == 255)
+    uppermass_h, uppermass_w = np.where(mask_region == 255)
 
     # x,y are the center of x indices and y indices of mass pixels
-    center_of_upper_mass = (np.average(uppermass_h), np.average(uppermass_w))
-    if center_of_upper_mass[1] > x + th:
-        return 'right'
-    if center_of_upper_mass[1] < x - th:
-        return 'left'
-    return 'center'
+    center_of_upper_mass = (np.average(uppermass_w), np.average(uppermass_h))
+    if center_of_upper_mass[0] > x + th:
+        return 'right',center_of_upper_mass
+    if center_of_upper_mass[0] < x - th:
+        return 'left',center_of_upper_mass
+    return 'center', center_of_upper_mass
 
 def player_control(mask,keyboard):
     W = mask.shape[1]
@@ -85,7 +84,7 @@ def player_control(mask,keyboard):
     # lean right and left
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
 
-        lean = player_lean(center_of_mass,mask=mask,th=2, w=W,region =((center_of_mass[0] - width // 2,
+        lean = player_lean(center_of_mass,width, height,mask=mask,th=2, w=W,region =((center_of_mass[0] - width // 2,
                                                             center_of_mass[1] - height // 2),
                                                            (center_of_mass[0] + width // 2,
                                                             center_of_mass[1] )))
@@ -96,17 +95,22 @@ def player_control(mask,keyboard):
     if lean == 'right':
         print("right")
         keyboard.press_and_release(Key.right)
-    '''
-    if lean == 'left':
-        print("left")
-        keyboard.press_and_release(Key.left)
-    # else:
-    #     keyboard.on_release("l")
-    if lean == 'right':
-        print("right")
-        keyboard.press_and_release(Key.right)
-    # else:
-    #     keyboard.on_release("r")
-    '''
+
     # add controls here
+
+
+def Region_mask(mask,center_of_mass,height,width):
+    mask_region = np.zeros_like(mask)
+
+    # Calculate the rectangle boundaries
+    top = max(center_of_mass[1] - height // 2, 0)  # Ensure top is not less than 0
+    bottom = min(center_of_mass[1], mask.shape[0])  # Ensure bottom does not exceed mask height
+    left = max(center_of_mass[0] - width // 2, 0)  # Ensure left is not less than 0
+    right = min(center_of_mass[0] + width // 2, mask.shape[1])  # Ensure right does not exceed mask width
+    print("top=",top,"bottom=",bottom,"left=",left,"right=",right)
+
+    # Replace the region within the bounds with the corresponding values from the original mask
+    mask_region[top:bottom, left:right] = mask[top:bottom, left:right]
+    # iris
+    return mask_region
 
