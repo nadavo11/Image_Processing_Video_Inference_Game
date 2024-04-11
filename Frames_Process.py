@@ -1,4 +1,3 @@
-
 from webcam_stream import WebcamStream
 import cv2
 import numpy as np
@@ -9,7 +8,6 @@ import Player_Position
 
 
 def filter_player(frame, background):
-
     # Compute the absolute difference of the current frame and background
     diff = cv2.absdiff(frame, background)
     # Convert the difference image to grayscale
@@ -17,7 +15,7 @@ def filter_player(frame, background):
 
     # Apply Gaussian filter to smooth the image
     diff_smoothed = cv2.GaussianBlur(diff_gray, (15, 15), 20)
-    
+
     # Apply Median filter to further reduce noise
     diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
     diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
@@ -60,7 +58,6 @@ def scan_background(webcam_stream):
                 accepted = 1
                 break
 
-
         frame = background.copy()
         # on the left side of the frame, write text
         cv2.putText(frame, f'This Is The Background : OK ? ', (text_x, text_y),
@@ -71,7 +68,7 @@ def scan_background(webcam_stream):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             webcam_stream.quit()
         exp = webcam_stream.get_EXPOSURE()
-        #accepted = int(input("Enter 1 for OK, or 0 to retry: "))
+        # accepted = int(input("Enter 1 for OK, or 0 to retry: "))
         if cv2.waitKey(1) & 0xFF == ord('1'):
             accepted = 1
             print("accepted, and exp = ", exp)
@@ -79,24 +76,24 @@ def scan_background(webcam_stream):
 
     return background
 
-def draw_rectangle(frame,mask):
+
+def draw_rectangle(frame, mask):
     center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
     frame_with_rectangle = frame.copy()  # Copy the frame
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
         center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
         # Draw a green rectangle around the player's center of mass
-        pt1 = (center_of_mass[0] - width//2, center_of_mass[1] - height//2)
-        pt2 = (center_of_mass[0] + width//2, center_of_mass[1] + height//2)
+        pt1 = (center_of_mass[0] - width // 2, center_of_mass[1] - height // 2)
+        pt2 = (center_of_mass[0] + width // 2, center_of_mass[1] + height // 2)
         cv2.rectangle(frame_with_rectangle, pt1, pt2, (0, 255, 0), 2)  # Green color, thickness 2
 
-
-    # Draw a red X at the player's center of mass
+        # Draw a red X at the player's center of mass
         frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_mass, (0, 0, 255),
-                                                  markerType=cv2.MARKER_CROSS, markerSize=10, thickness=2)
-        region =((center_of_mass[0] - width // 2,
-                 center_of_mass[1] - height // 2),
-                 (center_of_mass[0] + width // 2,
-                 center_of_mass[1] ))
+                                              markerType=cv2.MARKER_CROSS, markerSize=10, thickness=2)
+        region = ((center_of_mass[0] - width // 2,
+                   center_of_mass[1] - height // 2),
+                  (center_of_mass[0] + width // 2,
+                   center_of_mass[1]))
         cv2.rectangle(frame_with_rectangle,
                       region[0], region[1], (0, 150, 150), 2)  # Green color, thickness 2
 
@@ -112,19 +109,34 @@ def draw_rectangle(frame,mask):
             center_of_upper_mass = (round(center_of_upper_mass[0]), round(center_of_upper_mass[1]))
 
             # draw a red X at the player's center of upper mass
-            frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_upper_mass, (0, 0, 255),2)
+            frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_upper_mass, (0, 0, 255), 2)
 
     return frame_with_rectangle
 
+
 def grid_output(frame, background):
     mask = filter_player(frame, background)
-    #clean_mask, edges = create_clean_mask(mask)
-    frame_with_rectangle = draw_rectangle(frame,mask)
+    # clean_mask, edges = create_clean_mask(mask)
+    frame_with_rectangle = draw_rectangle(frame, mask)
 
     # Convert masks to BGR for display purposes
     binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-    #edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+
+    center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
+    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
+
+        lean = Player_Position.player_lean(center_of_mass, mask=mask, th=2, region=((center_of_mass[0] - width // 2,
+                                                                                 center_of_mass[1] - height // 2),
+                                                                                (center_of_mass[0] + width // 2,
+                                                                                 center_of_mass[1])))
+        if lean == 'left':
+            # paint binary image2 white pixels green
+            binary_image2[mask == 255] = [0, 255, 0]
+        if lean == 'right':
+            # paint binary image2 white pixels red
+            binary_image2[mask == 255] = [0,0,255]
+        # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
 
     # Prepare frames for display
     frames = [background, frame, frame_with_rectangle, binary_image2]
@@ -136,6 +148,5 @@ def grid_output(frame, background):
     grid = np.vstack((top_row, bottom_row))
 
     return grid, mask
-
 
 ######################
