@@ -5,13 +5,8 @@ import numpy as np
 import time
 from scipy import ndimage
 from pynput.keyboard import Key, Controller, Listener
+import Player_Position
 
-# initializing and starting multi - thread webcam input stream
-webcam_stream = WebcamStream(stream_id=0)  # 0 id for main camera
-webcam_stream.start()
-
-frame = webcam_stream.read()
-H, W = frame.shape[:2]
 
 def filter_player(frame, background):
 
@@ -61,6 +56,9 @@ def scan_background(webcam_stream):
             # quit the scan
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 webcam_stream.quit()
+            if cv2.waitKey(1) & 0xFF == ord('1'):
+                accepted = 1
+                break
 
 
         frame = background.copy()
@@ -73,17 +71,16 @@ def scan_background(webcam_stream):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             webcam_stream.quit()
         exp = webcam_stream.get_EXPOSURE()
-        accepted = int(input("Enter 1 for OK, or 0 to retry: "))
-        if accepted == 1:
-            print(exp)
+        #accepted = int(input("Enter 1 for OK, or 0 to retry: "))
+        if cv2.waitKey(1) & 0xFF == ord('1'):
+            accepted = 1
+            print("accepted, and exp = ", exp)
             break
 
     return background
 
-def grid_output(frame, background):
-    mask = filter_player(frame, background)
-    #clean_mask, edges = create_clean_mask(mask)
-    center_of_mass, width, height, percentage = get_player_position(mask)
+def draw_rectangle(frame,mask):
+    center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
     frame_with_rectangle = frame.copy()  # Copy the frame
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
         center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
@@ -116,6 +113,14 @@ def grid_output(frame, background):
 
             # draw a red X at the player's center of upper mass
             frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_upper_mass, (0, 0, 255),2)
+
+    return frame_with_rectangle
+
+def grid_output(frame, background):
+    mask = filter_player(frame, background)
+    #clean_mask, edges = create_clean_mask(mask)
+    frame_with_rectangle = draw_rectangle(frame,mask)
+
     # Convert masks to BGR for display purposes
     binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
@@ -134,112 +139,3 @@ def grid_output(frame, background):
 
 
 ######################
-
-def get_player_position(mask,outlier_std_threshold=5):
-    """
-    :param mask: binary mask
-    :return: (center_x, center_y)
-    """
-    # Find indices where we have mass
-    mass_h, mass_w = np.where(mask == 255)
-
-
-    # x,y are the center of x indices and y indices of mass pixels
-    center_of_mass = (np.average(mass_w), np.average(mass_h)) #ndimage.measurements.center_of_mass(mask)#(np.average(mass_x), np.average(mass_y))
-
-    if len(mass_w) < 10 or len(mass_h) < 10:
-        #center_of_mass = (mask.shape[0]//2,mask.shape[1]//2)
-        return center_of_mass, 10, 10, 0
-
-    # Calculate distances of each pixel from the center of mass
-    distances = np.sqrt((mass_h - center_of_mass[1]) ** 2 + (mass_w - center_of_mass[0]) ** 2)
-
-    # Filter out outliers based on the standard deviation threshold
-    std_dev = np.std(distances)
-    #print("std_dev=",std_dev)
-    main_mass_indices = np.where(distances <= outlier_std_threshold * std_dev)
-
-    #mass_x_for_std = mass_x - center_of_mass[0]
-    #mass_y_for_std = mass_y - center_of_mass[1]
-    #std_x = np.std(mass_x_for_std)
-    #std_y = np.std(mass_y_for_std)
-    # Filter out outliers based on the threshold
-    #distances =
-
-    # Use only main mass indices to calculate width and height
-    main_mass_w = mass_w[main_mass_indices]
-    main_mass_h = mass_h[main_mass_indices]
-
-
-
-    # Calculate percentage of mask pixels being equal to 1
-    total_pixels = mask.shape[0] * mask.shape[1]
-    ones_count = np.count_nonzero(mask)
-    percentage = (ones_count / total_pixels) * 100
-
-    # Calculate width and height of the rectangle
-    if len(main_mass_w) < 50 or len(main_mass_h) < 50:
-        width = 50
-        height = 50
-        return center_of_mass, width, height, percentage
-    width = np.max(main_mass_w) - np.min(main_mass_w)
-    height = np.max(main_mass_h) - np.min(main_mass_h)
-
-    return center_of_mass, width, height, percentage
-
-def player_lean(player_position, w = W, th = 5,mask = None,region = (0,0,H,W)):
-    # calculate the threshold precentage
-    th = w*th//100
-    # height
-    x = player_position[0]
-    # width
-    y = player_position[1]
-    # operate in the region of the player's upper body
-    # crop the image
-    if not mask:
-        return
-    msk_region = mask[region[0][0]:region[1][0], region[1][0]:region[1][1]]
-    region_h = region[1][0] - region[0][0]
-
-    uppermass_h, uppermass_w = np.where(msk_region == 255)
-
-    # x,y are the center of x indices and y indices of mass pixels
-    center_of_upper_mass = (np.average(uppermass_h), np.average(uppermass_w))
-    return center_of_upper_mass
-    if y > W//2 + th:
-        return 'right'
-    if y < W//2 - th:
-        return 'left'
-
-def player_control(mask,keyboard):
-    W = mask.shape[1]
-    center_of_mass, width, height, percentage = get_player_position(mask)
-    lean = 'center'
-    # lean right and left
-    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
-
-        lean = player_lean(center_of_mass,mask, W,region =((center_of_mass[0] - width // 2,
-                                                            center_of_mass[1] - height // 2),
-                                                           (center_of_mass[0] + width // 2,
-                                                            center_of_mass[1] )))
-    return lean
-    if lean == 'left':
-        print("left")
-        keyboard.press_and_release(Key.left)
-    if lean == 'right':
-        print("right")
-        keyboard.press_and_release(Key.right)
-    '''
-    if lean == 'left':
-        print("left")
-        keyboard.press_and_release(Key.left)
-    # else:
-    #     keyboard.on_release("l")
-    if lean == 'right':
-        print("right")
-        keyboard.press_and_release(Key.right)
-    # else:
-    #     keyboard.on_release("r")
-    '''
-    # add controls here
-
