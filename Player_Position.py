@@ -47,8 +47,9 @@ def get_player_position(mask,outlier_std_threshold=5):
 
     return center_of_mass, width, height, percentage
 
-def player_lean(player_position, w , th = 5,mask = None,region = (0,0,2,2)):
+def player_lean(player_position, w = 640 , th = 2,mask = None,region = (0,0,2,2)):
     # calculate the threshold precentage
+    #print("W=",w)
     th = w*th//100
     # height
     x = player_position[0]
@@ -56,20 +57,26 @@ def player_lean(player_position, w , th = 5,mask = None,region = (0,0,2,2)):
     y = player_position[1]
     # operate in the region of the player's upper body
     # crop the image
-    if not mask:
+    if mask is None:
         return
-    msk_region = mask[region[0][0]:region[1][0], region[1][0]:region[1][1]]
+    # TODO: make this work:
+    # round region
+    # region = ((round(region[0][0]),round(region[0][1])),(round(region[1][0]),round(region[1][1])))
+    # msk_region = mask[region[1][1]:region[1][1], region[0][0]:region[0][1]]
+    region_h = region[1][0] - region[0][0]
+
+    msk_region = mask[:round(x), :]
     region_h = region[1][0] - region[0][0]
 
     uppermass_h, uppermass_w = np.where(msk_region == 255)
 
     # x,y are the center of x indices and y indices of mass pixels
     center_of_upper_mass = (np.average(uppermass_h), np.average(uppermass_w))
-    return center_of_upper_mass
-    if y > W//2 + th:
+    if center_of_upper_mass[1] > x + th:
         return 'right'
-    if y < W//2 - th:
+    if center_of_upper_mass[1] < x - th:
         return 'left'
+    return 'center'
 
 def player_control(mask,keyboard):
     W = mask.shape[1]
@@ -78,11 +85,11 @@ def player_control(mask,keyboard):
     # lean right and left
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
 
-        lean = player_lean(center_of_mass,mask, W,region =((center_of_mass[0] - width // 2,
+        lean = player_lean(center_of_mass,mask=mask,th=2, w=W,region =((center_of_mass[0] - width // 2,
                                                             center_of_mass[1] - height // 2),
                                                            (center_of_mass[0] + width // 2,
                                                             center_of_mass[1] )))
-    return lean
+    print(lean)
     if lean == 'left':
         print("left")
         keyboard.press_and_release(Key.left)
