@@ -6,7 +6,9 @@ import time
 from scipy import ndimage
 from pynput.keyboard import Key, Controller, Listener
 import Frames_Process
+from Player import Player
 
+Mario = Player()
 def get_player_position(mask,outlier_std_threshold=5):
     """
     :param mask: binary mask
@@ -84,19 +86,19 @@ def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
         return 'left',center_of_upper_mass
     return 'center', center_of_upper_mass
 
-def player_control(mask,keyboard):
-    W = mask.shape[1]
-    H = mask.shape[0]
-    #print("H=",H)
-    center_of_mass, width, height, percentage = get_player_position(mask)
+def player_control(mask,keyboard, Mario):
+
+    center_of_mass, width, height = Mario.center_of_mass , Mario.width , Mario.height
     lean = 'center'
     squat = 0
     # lean right and left
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
 
-        lean,center_of_upper_mass = player_lean(center_of_mass,width, height, w=W,mask=mask)
+        #lean,center_of_upper_mass = player_lean(center_of_mass,width, height, w=Mario.W,mask=mask)
+        lean, center_of_upper_mass = Mario.lean, Mario.center_of_upper_mass
         if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
-            squat = player_squat(center_of_mass,center_of_upper_mass,th=1,H=H)
+            #squat = player_squat(center_of_mass,center_of_upper_mass,th=1,H=Mario.H)
+            squat = Mario.squat
 
     #print(lean)
     if squat == 'down':

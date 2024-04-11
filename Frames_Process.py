@@ -5,6 +5,7 @@ import time
 from scipy import ndimage
 from pynput.keyboard import Key, Controller, Listener
 import Player_Position
+from Player import Player
 
 
 def filter_player(frame, background):
@@ -110,8 +111,9 @@ def draw_rectangle(frame, mask,center_of_mass,center_of_upper_mass, width, heigh
     return frame_with_rectangle
 
 
-def grid_output(frame, background):
+def grid_output(frame, background, Mario):
     mask = filter_player(frame, background)
+    Mario.mask = mask
     # clean_mask, edges = create_clean_mask(mask)
 
 
@@ -120,9 +122,15 @@ def grid_output(frame, background):
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     frame_with_rectangle = frame.copy()
     center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
+    Mario.center_of_mass = center_of_mass
+    Mario.width = width
+    Mario.height = height
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
-        W = mask.shape[1] ### delete later
-        lean, center_of_upper_mass = Player_Position.player_lean(center_of_mass,width, height,w=W, mask=mask)
+        center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
+        Mario.center_of_mass = center_of_mass
+        lean, center_of_upper_mass = Player_Position.player_lean(center_of_mass,width, height,w=Mario.W, mask=mask)
+        Mario.lean = lean
+        Mario.center_of_upper_mass = center_of_upper_mass
         if lean == 'left':
             # paint binary image2 white pixels green
             binary_image2[mask == 255] = [0, 255, 0]
@@ -130,6 +138,14 @@ def grid_output(frame, background):
             # paint binary image2 white pixels red
             binary_image2[mask == 255] = [0,0,255]
         # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+        if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
+            squat = Player_Position.player_squat(center_of_mass,center_of_upper_mass,th=1,H=Mario.H)
+            Mario.squat = squat
+            center_of_upper_mass = (round(center_of_upper_mass[0]), round(center_of_upper_mass[1]))
+            Mario.center_of_upper_mass = center_of_upper_mass
+            if squat == 'down':
+                # draw arrow down
+                binary_image2 = cv2.arrowedLine(binary_image2, center_of_upper_mass, center_of_mass, (0, 0, 255), 10,tipLength =0.5)
         frame_with_rectangle = draw_rectangle(frame, mask,center_of_mass,center_of_upper_mass, width, height)
     # Prepare frames for display
     frames = [background, frame, frame_with_rectangle, binary_image2]

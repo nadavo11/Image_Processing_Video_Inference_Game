@@ -7,18 +7,19 @@ import time
 import trash_functions
 import Player_Position
 import Frames_Process
+from Player import Player
 
-def play(webcam_stream, background):
+def play(webcam_stream, background,Mario):
     while True:
         # Capture the video frame
         frame = webcam_stream.read()
         # Process the frame
         #mask = filter_player(frame, background)
-        grid, mask = Frames_Process.grid_output(frame, background)
+        grid, mask = Frames_Process.grid_output(frame, background,Mario)
 
         # Display the output
         cv2.imshow('output', grid)
-        Player_Position.player_control(mask,keyboard)
+        Player_Position.player_control(mask,keyboard,Mario)
 
         # Handle user input
         key = cv2.waitKey(1)
@@ -33,8 +34,9 @@ def play(webcam_stream, background):
 webcam_stream = WebcamStream(stream_id=0)  # 0 id for main camera
 webcam_stream.start()
 keyboard = KeyboardInterface()
+Mario = Player()
 background = Frames_Process.scan_background(webcam_stream)
-play(webcam_stream, background)
+play(webcam_stream, background,Mario)
 # After the loop release the cap object
 webcam_stream.vcap.release()
 # Destroy all the windows
