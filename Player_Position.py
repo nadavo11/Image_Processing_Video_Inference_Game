@@ -1,4 +1,4 @@
-from functions import H,W
+
 from webcam_stream import WebcamStream
 import cv2
 import numpy as np
@@ -47,8 +47,9 @@ def get_player_position(mask,outlier_std_threshold=5):
 
     return center_of_mass, width, height, percentage
 
-def player_lean(player_position, w = W, th = 2,mask = None,region = (0,0,H,W)):
+def player_lean(player_position, w = 640 , th = 2,mask = None,region = (0,0,2,2)):
     # calculate the threshold precentage
+    #print("W=",w)
     th = w*th//100
     # height
     x = player_position[0]

@@ -95,12 +95,27 @@ def draw_rectangle(frame, mask):
                   (center_of_mass[0] + width // 2,
                    center_of_mass[1]))
         cv2.rectangle(frame_with_rectangle,
-                      region[0], region[1], (0, 150, 150), 2)  # Green color, thickness 2
+                      region[0], region[1], (255, 0, 0), 2)  # Green color, thickness 2
 
-        msk_region = mask[:center_of_mass[0], :]
-        region_h = region[1][0] - region[0][0]
+        # Center of mass order (W,H)!!
+        # Mask order (H,W) !!
+        #msk_region = mask[:center_of_mass[0], :]
+        #region_h = region[1][0] - region[0][0]
+        #iris
+        # First, create a zero-filled array of the same shape as mask
+        mask_region = np.zeros_like(mask)
 
-        uppermass_h, uppermass_w = np.where(msk_region == 255)
+        # Calculate the rectangle boundaries
+        top = max(center_of_mass[1] - height // 2, 0)  # Ensure top is not less than 0
+        bottom = min(center_of_mass[1], mask.shape[0])  # Ensure bottom does not exceed mask height
+        left = max(center_of_mass[0] - width // 2, 0)  # Ensure left is not less than 0
+        right = min(center_of_mass[0] + width // 2, mask.shape[1])  # Ensure right does not exceed mask width
+
+        # Replace the region within the bounds with the corresponding values from the original mask
+        mask_region[top:bottom, left:right] = mask[top:bottom, left:right]
+        #iris
+
+        uppermass_h, uppermass_w = np.where(mask_region == 255)
 
         # x,y are the center of x indices and y indices of mass pixels
         center_of_upper_mass = (np.average(uppermass_w), np.average(uppermass_h))
@@ -125,8 +140,8 @@ def grid_output(frame, background):
 
     center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
-
-        lean = Player_Position.player_lean(center_of_mass, mask=mask, th=2, region=((center_of_mass[0] - width // 2,
+        W = mask.shape[1] ### delete later
+        lean = Player_Position.player_lean(center_of_mass,W, mask=mask, th=2, region=((center_of_mass[0] - width // 2,
                                                                                  center_of_mass[1] - height // 2),
                                                                                 (center_of_mass[0] + width // 2,
                                                                                  center_of_mass[1])))
