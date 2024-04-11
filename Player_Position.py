@@ -59,7 +59,7 @@ def player_squat(center_of_mass,center_of_upper_mass,th=1,H=480):
         #print("center_of_upper_mass[0]=", center_of_upper_mass[0], "y=", y, "y-th=", y - th, "th=", th)
         return 'down'
     return 0
-def player_lean(center_of_mass,width, height, w = 640 , th = 3,mask = None):
+def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
     # calculate the threshold precentage
     #print("W=",w)
     th = w*th//100
