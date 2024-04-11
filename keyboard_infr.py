@@ -121,7 +121,7 @@ symb_to_hex = {'w': 0x11, 'a': 0x1E, 's': 0x1F, 'd': 0x20, 'up': 0xC8, 'left': 0
 if __name__ == '__main__':
     for i in range(5):
         k = KeyBoardInterface()
-        k.pressNrelease(symb_to_hex['w'], 0.1)
+        #k.(symb_to_hex['w'], 0.1)
         k.pressNrelease(symb_to_hex['a'], 0.1)
         k.pressNrelease(symb_to_hex['s'], 0.1)
         k.pressNrelease(symb_to_hex['d'], 0.1)
