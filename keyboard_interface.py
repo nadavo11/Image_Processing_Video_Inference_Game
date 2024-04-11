@@ -6,9 +6,38 @@ class KeyboardInterface:
     def __init__(self):
         self.keyboard = Controller()
         self.auto_press_flags = {}
+        self.long_press_flags = {}
         self.soft_press_flags = {}
         self.threads = {}
         self.press_flags ={}
+    def start_long_press(self, key):
+        """
+        Starts a long press on a specific key.
+
+        :param key: The key to start pressing.
+        """
+        def press_key():
+            while self.long_press_flags.get(key, False):  # Continue pressing the key as long as the flag is True
+                self.long_press_flags[key] = True  # Set the flag to True to indicate the key is being pressed
+                self.keyboard.press(key)
+                time.sleep(0.1)  # Sleep briefly to avoid CPU overuse
+            self.keyboard.release(key)  # Ensure the key is released when done
+
+        if key not in self.long_press_flags or not self.long_press_flags[key]:
+            self.long_press_flags[key] = True  # Set the flag to True to indicate the key is being pressed
+            thread = threading.Thread(target=press_key)
+            thread.start()
+            self.threads[key] = thread  # Store the thread for possible termination
+
+    def stop_long_press(self, key):
+        """
+        Stops a long press on a specific key.
+
+        :param key: The key to stop pressing.
+        """
+        if key in self.long_press_flags:
+            self.long_press_flags[key] = False  # Set the flag to False to stop pressing the key
+            self.threads[key].join()  # Wait for the thread to finish
 
     def _press_key(self, key_char):
         """Auto-press a specific key based on its flag status."""
@@ -80,6 +109,8 @@ class KeyboardInterface:
 
         self.threads[key_char] = threading.Thread(target=self._press_and_release, args=(key_char,duration,), daemon=True)
         self.threads[key_char].start()
+
+
     def _press_and_release(self, key_char, duration):
         """Press and release a key."""
         self.keyboard.press(key_char)
