@@ -137,7 +137,9 @@ def grid_output(frame, background):
             # paint binary image2 white pixels red
             binary_image2[mask == 255] = [0,0,255]
         # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-
+        if center_of_mass[0] > 240:
+        # draw a down arrow
+            binary_image2 = cv2.arrowedLine(binary_image2, (160, 120), (160, 240), (0, 255, 0), 2)
     # Prepare frames for display
     frames = [background, frame, frame_with_rectangle, binary_image2]
     resized_frames = [cv2.resize(frame, (320, 240)) for frame in frames]

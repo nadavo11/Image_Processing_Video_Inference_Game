@@ -88,13 +88,20 @@ def player_control(mask,keyboard):
                                                             center_of_mass[1] - height // 2),
                                                            (center_of_mass[0] + width // 2,
                                                             center_of_mass[1] )))
-    print(lean)
     if lean == 'left':
-        print("left")
-        keyboard.press_and_release(Key.left)
+
+        keyboard.press_and_release("a")
     if lean == 'right':
-        print("right")
-        keyboard.press_and_release(Key.right)
+
+        keyboard.press_and_release("d")
+
+    if center_of_mass[0]>  H//2 +40:
+        keyboard.press_and_release(Key.down)
+        print("down")
+    if center_of_mass[0]<  H//2 -40:
+        print("w")
+        #keyboard.press_and_release(Key.up)
+
     '''
     if lean == 'left':
         print("left")
