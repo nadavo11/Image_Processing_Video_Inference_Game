@@ -111,11 +111,17 @@ def grid_output(frame, background):
         # x,y are the center of x indices and y indices of mass pixels
         center_of_upper_mass = (np.average(uppermass_w), np.average(uppermass_h))
         # round the center of mass
+        lean = "center"
         if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
             center_of_upper_mass = (round(center_of_upper_mass[0]), round(center_of_upper_mass[1]))
 
             # draw a red X at the player's center of upper mass
             frame_with_rectangle = cv2.drawMarker(frame_with_rectangle, center_of_upper_mass, (0, 0, 255),2)
+
+            if center_of_upper_mass[1] > center_of_mass[0] + 20:
+                lean = 'right'
+            if center_of_upper_mass[1] < center_of_mass[0] - 20:
+                lean = 'left'
     # Convert masks to BGR for display purposes
     binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
@@ -196,19 +202,24 @@ def player_lean(player_position, w = W, th = 5,mask = None,region = (0,0,H,W)):
     y = player_position[1]
     # operate in the region of the player's upper body
     # crop the image
-    if not mask:
+    if mask is None:
         return
-    msk_region = mask[region[0][0]:region[1][0], region[1][0]:region[1][1]]
+    #TODO: make this work:
+    #round region
+    #region = ((round(region[0][0]),round(region[0][1])),(round(region[1][0]),round(region[1][1])))
+    #msk_region = mask[region[1][1]:region[1][1], region[0][0]:region[0][1]]
+    region_h = region[1][0] - region[0][0]
+
+    msk_region = mask[:round(x), :]
     region_h = region[1][0] - region[0][0]
 
     uppermass_h, uppermass_w = np.where(msk_region == 255)
 
-    # x,y are the center of x indices and y indices of mass pixels
+    # x,y are the center of upper mass pixels
     center_of_upper_mass = (np.average(uppermass_h), np.average(uppermass_w))
-    return center_of_upper_mass
-    if y > W//2 + th:
+    if center_of_upper_mass[1] > x + th:
         return 'right'
-    if y < W//2 - th:
+    if center_of_upper_mass[1] < x - th:
         return 'left'
 
 def player_control(mask,keyboard):
@@ -218,11 +229,10 @@ def player_control(mask,keyboard):
     # lean right and left
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
 
-        lean = player_lean(center_of_mass,mask, W,region =((center_of_mass[0] - width // 2,
+        lean = player_lean(center_of_mass,mask=mask, w=W,region =((center_of_mass[0] - width // 2,
                                                             center_of_mass[1] - height // 2),
                                                            (center_of_mass[0] + width // 2,
                                                             center_of_mass[1] )))
-    return lean
     if lean == 'left':
         print("left")
         keyboard.press_and_release(Key.left)
