@@ -50,9 +50,14 @@ def get_player_position(mask,outlier_std_threshold=5):
         center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1])) ## cancel if you want the accuracy
     return center_of_mass, width, height, percentage
 
-def player_squat():
+def player_squat(center_of_mass,center_of_upper_mass,th=2,H=480):
+    th = H * th // 50
+    y = center_of_mass[1]
+    if center_of_upper_mass[0] > y - th:
+        print("center_of_upper_mass[0]=",center_of_upper_mass[0],"y=",y, "y-th=",y + th,"th=",th)
+        return 'down'
     return 0
-def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None,region = (0,0,2,2)):
+def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
     # calculate the threshold precentage
     #print("W=",w)
     th = w*th//100
@@ -79,16 +84,22 @@ def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None,regio
 
 def player_control(mask,keyboard):
     W = mask.shape[1]
+    H = mask.shape[0]
+    #print("H=",H)
     center_of_mass, width, height, percentage = get_player_position(mask)
     lean = 'center'
+    squat = 0
     # lean right and left
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
 
-        lean = player_lean(center_of_mass,width, height,mask=mask,th=2, w=W,region =((center_of_mass[0] - width // 2,
-                                                            center_of_mass[1] - height // 2),
-                                                           (center_of_mass[0] + width // 2,
-                                                            center_of_mass[1] )))
-    print(lean)
+        lean,center_of_upper_mass = player_lean(center_of_mass,width, height, w=W,th=2,mask=mask)
+        if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
+            squat = player_squat(center_of_mass,center_of_upper_mass,th=2,H=H)
+
+    #print(lean)
+    if squat == 'down':
+        print("down")
+        keyboard.press_and_release(Key.down)
     if lean == 'left':
         print("left")
         keyboard.press_and_release(Key.left)
@@ -101,16 +112,16 @@ def player_control(mask,keyboard):
 
 def Region_mask(mask,center_of_mass,height,width):
     mask_region = np.zeros_like(mask)
+    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
+        center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
+        # Calculate the rectangle boundaries
+        top = max(center_of_mass[1] - height // 2, 0)  # Ensure top is not less than 0
+        bottom = min(center_of_mass[1], mask.shape[0])  # Ensure bottom does not exceed mask height
+        left = max(center_of_mass[0] - width // 2, 0)  # Ensure left is not less than 0
+        right = min(center_of_mass[0] + width // 2, mask.shape[1])  # Ensure right does not exceed mask width
 
-    # Calculate the rectangle boundaries
-    top = max(center_of_mass[1] - height // 2, 0)  # Ensure top is not less than 0
-    bottom = min(center_of_mass[1], mask.shape[0])  # Ensure bottom does not exceed mask height
-    left = max(center_of_mass[0] - width // 2, 0)  # Ensure left is not less than 0
-    right = min(center_of_mass[0] + width // 2, mask.shape[1])  # Ensure right does not exceed mask width
-    print("top=",top,"bottom=",bottom,"left=",left,"right=",right)
-
-    # Replace the region within the bounds with the corresponding values from the original mask
-    mask_region[top:bottom, left:right] = mask[top:bottom, left:right]
+        # Replace the region within the bounds with the corresponding values from the original mask
+        mask_region[top:bottom, left:right] = mask[top:bottom, left:right]
     # iris
     return mask_region
 
