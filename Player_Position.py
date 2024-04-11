@@ -47,7 +47,7 @@ def get_player_position(mask,outlier_std_threshold=5):
 
     return center_of_mass, width, height, percentage
 
-def player_lean(player_position, w , th = 5,mask = None,region = (0,0,2,2)):
+def player_lean(player_position, w = W, th = 5,mask = None,region = (0,0,H,W)):
     # calculate the threshold precentage
     th = w*th//100
     # height
@@ -56,19 +56,24 @@ def player_lean(player_position, w , th = 5,mask = None,region = (0,0,2,2)):
     y = player_position[1]
     # operate in the region of the player's upper body
     # crop the image
-    if not mask:
+    if mask is None:
         return
-    msk_region = mask[region[0][0]:region[1][0], region[1][0]:region[1][1]]
+    #TODO: make this work:
+    #round region
+    #region = ((round(region[0][0]),round(region[0][1])),(round(region[1][0]),round(region[1][1])))
+    #msk_region = mask[region[1][1]:region[1][1], region[0][0]:region[0][1]]
+    region_h = region[1][0] - region[0][0]
+
+    msk_region = mask[:round(x), :]
     region_h = region[1][0] - region[0][0]
 
     uppermass_h, uppermass_w = np.where(msk_region == 255)
 
-    # x,y are the center of x indices and y indices of mass pixels
+    # x,y are the center of upper mass pixels
     center_of_upper_mass = (np.average(uppermass_h), np.average(uppermass_w))
-    return center_of_upper_mass
-    if y > W//2 + th:
+    if center_of_upper_mass[1] > x + th:
         return 'right'
-    if y < W//2 - th:
+    if center_of_upper_mass[1] < x - th:
         return 'left'
 
 def player_control(mask,keyboard):
