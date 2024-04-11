@@ -74,7 +74,7 @@ def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
         return
     # TODO: make this work:
 
-    mask_region = Region_mask(mask,center_of_mass,height,width)
+    mask_region = Upper_Region_mask(mask,center_of_mass,height,width)
 
     uppermass_h, uppermass_w = np.where(mask_region == 255)
 
@@ -85,6 +85,13 @@ def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
     if center_of_upper_mass[0] < x - th:
         return 'left',center_of_upper_mass
     return 'center', center_of_upper_mass
+
+def jumping(Mario):
+    if (time.time() - Mario.time_down > 2.5) :
+        if ( Mario.last_center[1] - Mario.center_of_mass[1] > 5 ):
+            return 'up'
+    else:
+        return 'center'
 
 def player_control(mask,keyboard, Mario):
 
@@ -99,10 +106,13 @@ def player_control(mask,keyboard, Mario):
         if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
             #squat = player_squat(center_of_mass,center_of_upper_mass,th=1,H=Mario.H)
             squat = Mario.squat
-
     #print(lean)
+    if Mario.jump == 'up':
+        print("up")
+        keyboard.press_and_release(Key.up)
     if squat == 'down':
         print("down")
+        Mario.set_down()
         keyboard.press_and_release(Key.down)
     if lean == 'left':
         print("left")
@@ -111,10 +121,13 @@ def player_control(mask,keyboard, Mario):
         print("right")
         keyboard.press_and_release('d')
 
+    Mario.previous_mask = mask
+    Mario.last_center = Mario.center_of_mass
+
     # add controls here
 
 
-def Region_mask(mask,center_of_mass,height,width):
+def Upper_Region_mask(mask,center_of_mass,height,width):
     mask_region = np.zeros_like(mask)
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
         center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
@@ -129,3 +142,17 @@ def Region_mask(mask,center_of_mass,height,width):
     # iris
     return mask_region
 
+def Region_mask(mask,center_of_mass,height,width):
+    mask_region = np.zeros_like(mask)
+    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
+        center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
+        # Calculate the rectangle boundaries
+        top = max(center_of_mass[1] - height // 2, 0)  # Ensure top is not less than 0
+        bottom = min(center_of_mass[1] + height // 2, mask.shape[0])
+        left = max(center_of_mass[0] - width // 2, 0)  # Ensure left is not less than 0
+        right = min(center_of_mass[0] + width // 2, mask.shape[1])  # Ensure right does not exceed mask width
+
+        # Replace the region within the bounds with the corresponding values from the original mask
+        mask_region[top:bottom, left:right] = mask[top:bottom, left:right]
+    # iris
+    return mask_region

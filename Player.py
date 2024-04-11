@@ -12,6 +12,7 @@ class Player:
         self.previous_mask = None
         self.current_mask = None
         self.center_of_mass = None
+        self.last_center = (0,0)
         self.height = None
         self.width = None
         self.center_of_upper_mass = None
@@ -20,3 +21,18 @@ class Player:
         self.W = 640
         self.lean = None
         self.squat = None
+        self.jump = None
+        self.time_down = time.time()
+
+    def set_down(self):
+        self.time_down = time.time()
+
+    '''    def set_jump(self,jumping):
+        Times = time.time() - self.time_down
+        if Times > 3 :
+            print("time.time() - self.time_down = ", Times)
+            self.jump = jumping
+        else:
+            print("Times = ", Times)
+            self.jump = None'''
+
