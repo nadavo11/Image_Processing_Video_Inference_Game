@@ -122,10 +122,7 @@ def grid_output(frame, background):
     center_of_mass, width, height, percentage = Player_Position.get_player_position(mask)
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
         W = mask.shape[1] ### delete later
-        lean, center_of_upper_mass = Player_Position.player_lean(center_of_mass,width, height,W, mask=mask, th=2, region=((center_of_mass[0] - width // 2,
-                                                                                 center_of_mass[1] - height // 2),
-                                                                                (center_of_mass[0] + width // 2,
-                                                                                 center_of_mass[1])))
+        lean, center_of_upper_mass = Player_Position.player_lean(center_of_mass,width, height,w=W, mask=mask)
         if lean == 'left':
             # paint binary image2 white pixels green
             binary_image2[mask == 255] = [0, 255, 0]

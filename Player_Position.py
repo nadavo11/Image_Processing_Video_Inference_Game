@@ -50,14 +50,16 @@ def get_player_position(mask,outlier_std_threshold=5):
         center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1])) ## cancel if you want the accuracy
     return center_of_mass, width, height, percentage
 
-def player_squat(center_of_mass,center_of_upper_mass,th=2,H=480):
-    th = H * th // 50
+def player_squat(center_of_mass,center_of_upper_mass,th=1,H=480):
+    th = H*th // 6
     y = center_of_mass[1]
-    if center_of_upper_mass[0] > y - th:
-        print("center_of_upper_mass[0]=",center_of_upper_mass[0],"y=",y, "y-th=",y + th,"th=",th)
+
+    if center_of_upper_mass[1] > y - th:
+        #print("center_of_upper_mass[0]-y=", center_of_upper_mass[0]-y)
+        #print("center_of_upper_mass[0]=", center_of_upper_mass[0], "y=", y, "y-th=", y - th, "th=", th)
         return 'down'
     return 0
-def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
+def player_lean(center_of_mass,width, height, w = 640 , th = 3,mask = None):
     # calculate the threshold precentage
     #print("W=",w)
     th = w*th//100
@@ -92,9 +94,9 @@ def player_control(mask,keyboard):
     # lean right and left
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
 
-        lean,center_of_upper_mass = player_lean(center_of_mass,width, height, w=W,th=2,mask=mask)
+        lean,center_of_upper_mass = player_lean(center_of_mass,width, height, w=W,mask=mask)
         if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
-            squat = player_squat(center_of_mass,center_of_upper_mass,th=2,H=H)
+            squat = player_squat(center_of_mass,center_of_upper_mass,th=1,H=H)
 
     #print(lean)
     if squat == 'down':
@@ -102,10 +104,10 @@ def player_control(mask,keyboard):
         keyboard.press_and_release(Key.down)
     if lean == 'left':
         print("left")
-        keyboard.press_and_release(Key.left)
+        keyboard.press_and_release('a')
     if lean == 'right':
         print("right")
-        keyboard.press_and_release(Key.right)
+        keyboard.press_and_release('d')
 
     # add controls here
 
