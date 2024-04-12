@@ -20,7 +20,7 @@ def play(webcam_stream, background,Mario):
 
         # Display the output
         cv2.imshow('output', grid)
-        Player_Position.player_control(mask,keyboard,Mario)
+        Player_Position.player_control(mask, keyboard, Mario)
 
         # Handle user input
         key = cv2.waitKey(1)

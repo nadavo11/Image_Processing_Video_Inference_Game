@@ -17,9 +17,9 @@ class KeyboardInterface:
         :param key: The key to start pressing.
         """
         def press_key():
+            self.keyboard.press(key)
             while self.long_press_flags.get(key, False):  # Continue pressing the key as long as the flag is True
                 self.long_press_flags[key] = True  # Set the flag to True to indicate the key is being pressed
-                self.keyboard.press(key)
                 time.sleep(0.1)  # Sleep briefly to avoid CPU overuse
             self.keyboard.release(key)  # Ensure the key is released when done
 
@@ -81,7 +81,7 @@ class KeyboardInterface:
         """
         if key_char in self.soft_press_flags:
             self.soft_press_flags[key_char] = False
-        del self.threads[key_char]
+            del self.threads[key_char]
 
     def _start_auto_press(self, key_char):
         """Start auto-pressing a specified key."""

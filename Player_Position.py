@@ -72,7 +72,6 @@ def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
     # operate in the region of the player's upper body
     if mask is None:
         return
-    # TODO: make this work:
 
     mask_region = Upper_Region_mask(mask,center_of_mass,height,width)
 
@@ -95,7 +94,7 @@ def jumping(Mario):
 
 def player_control(mask,keyboard, Mario):
 
-    center_of_mass, width, height = Mario.center_of_mass , Mario.width , Mario.height
+    center_of_mass, width, height = Mario.center_of_mass, Mario.width, Mario.height
     lean = 'center'
     squat = 0
     # lean right and left
@@ -109,17 +108,27 @@ def player_control(mask,keyboard, Mario):
     #print(lean)
     if Mario.jump == 'up':
         print("up")
-        keyboard.press_and_release(Key.up)
+        keyboard.start_long_press(Key.up)
+        keyboard.stop_long_press(Key.down)
     if squat == 'down':
         print("down")
         Mario.set_down()
-        keyboard.press_and_release(Key.down)
+        keyboard.start_long_press(Key.down)
+    if squat == 0:
+        keyboard.stop_long_press(Key.down)
     if lean == 'left':
         print("left")
-        keyboard.press_and_release('a')
+        keyboard.start_long_press("a")
+        keyboard.stop_long_press("d")
     if lean == 'right':
         print("right")
-        keyboard.press_and_release('d')
+        keyboard.start_long_press("d")
+        keyboard.stop_long_press("a")
+
+    if lean == 'center':
+        print("center")
+        keyboard.stop_long_press("a")
+        keyboard.stop_long_press("d")
 
     Mario.previous_mask = mask
     Mario.last_center = Mario.center_of_mass

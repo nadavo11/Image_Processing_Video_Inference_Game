@@ -138,7 +138,7 @@ def grid_output(frame, background, Mario):
             binary_image2[mask == 255] = [0, 255, 0]
         if lean == 'right':
             # paint binary image2 white pixels red
-            binary_image2[mask == 255] = [0,0,255]
+            binary_image2[mask == 255] = [0, 0, 255]
 
         # edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
         jumping = Player_Position.jumping(Mario)
