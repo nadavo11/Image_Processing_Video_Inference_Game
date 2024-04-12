@@ -9,23 +9,57 @@ import trash_functions
 import Player_Position
 import Frames_Process
 from Player import Player
-SOURCE = 'webcam'
+import sys
+import os
+
+#SOURCE = 'webcam'    #
+SOURCE = 'fake cam'
 def play(webcam_stream, background,Mario):
+    #Get_player_height
+    height_accepted = 0
+    while height_accepted != 1:
+        Mario.frame = webcam_stream.read()
+        # Process the frame
+        Mario.mask = Frames_Process.filter_player(Mario.frame, background)
+        Mario.center_of_center, Mario.width, Mario.height_of_person, Mario.percentage = Player_Position.get_player_position(Mario.mask)
+        # Display the output
+        cv2.imshow('output', Mario.mask)
+        # Handle user input
+        key = cv2.waitKey(1)
+        if key & 0xFF == ord('2'):
+            print("Mario.height_of_person = ", Mario.height_of_person,"Mario.center_of_center = ", Mario.center_of_center)
+            height_accepted = 1
+            break
     while True:
         # Capture the video frame
-        frame = webcam_stream.read()
+        Mario.frame = webcam_stream.read()
         # Process the frame
-        #mask = filter_player(frame, background)
-        grid, mask = Frames_Process.grid_output(frame, background,Mario)
+        Mario.mask = Frames_Process.filter_player(Mario.frame, background)
+
+        Player_Position.player_control(Mario.mask,keyboard,Mario)
+        #mask = filter_player(frame, backg1round)
+        grid = Frames_Process.grid_output(Mario.frame, background,Mario)
 
         # Display the output
         cv2.imshow('output', grid)
-        Player_Position.player_control(mask, keyboard, Mario)
 
         # Handle user input
-        key = cv2.waitKey(1)
-        if key & 0xFF == ord('q'):
+        #key = cv2.waitKey(1)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             break
+        elif cv2.waitKey(1) & 0xFF == ord('b'):
+            print("Current squat threshold = ", Mario.squat_th, "\n")
+            accept_th = 0
+            while accept_th != 1:
+                sys.stdin = os.fdopen(0)
+                squat_th = input("Enter new squat threshold = ")
+                if squat_th.isdigit():
+                    int_value = int(squat_th)
+                    print("Input is an integer.")
+                    accept_th = 1
+                else:
+                    print("Input is not an integer.")
+            Mario.squat_th = int_value
         elif key & 0xFF == ord('e'):
             # Assuming get_EXPOSURE is a method of webcam_stream that either prints or sets the exposure
             webcam_stream.get_EXPOSURE()
