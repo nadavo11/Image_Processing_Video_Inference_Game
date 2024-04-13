@@ -88,7 +88,7 @@ def player_lean(center_of_mass,width, height, w = 640 , th = 2,mask = None):
 
 def jumping(Mario):
     if (time.time() - Mario.time_down > 2.5 and time.time() - Mario.time_up > 0.5) :
-        if ( Mario.last_center[1] - Mario.center_of_mass[1] > 5 ):
+        if ( Mario.last_center[1] - Mario.center_of_mass[1] > 4 ):
             Mario.time_up = time.time()
             return 'up'
     else:
@@ -126,6 +126,33 @@ def player_control(mask,keyboard, Mario):
     #print(lean)
     if Mario.jump == 'up':
         print("up")
+        keyboard.stop_long_press(Key.down)
+        keyboard.start_long_press(Key.up)
+
+    if squat == 'down':
+        print("down")
+        Mario.set_down()
+        keyboard.start_long_press(Key.down)
+    if squat == 0:
+        keyboard.stop_long_press(Key.down)
+    if lean == 'left':
+        print("left")
+        keyboard.stop_long_press("d")
+        keyboard.start_long_press("a")
+
+    if lean == 'right':
+        print("right")
+        keyboard.stop_long_press("a")
+        keyboard.start_long_press("d")
+
+
+    if lean == 'center':
+        print("center")
+        keyboard.stop_long_press("a")
+        keyboard.stop_long_press("d")
+
+    '''    if Mario.jump == 'up':
+        print("up")
         keyboard.press_and_release(Key.up)
     if squat == 'down':
         print("down")
@@ -136,7 +163,7 @@ def player_control(mask,keyboard, Mario):
         keyboard.press_and_release('a')
     if lean == 'right':
         print("right")
-        keyboard.press_and_release('d')
+        keyboard.press_and_release('d')'''
 
     Mario.previous_mask = mask
     Mario.last_center = Mario.center_of_mass
