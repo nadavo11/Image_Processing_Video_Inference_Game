@@ -49,12 +49,18 @@ def get_player_position(mask,outlier_std_threshold=5):
     width = np.max(main_mass_w) - np.min(main_mass_w)
     height = np.max(main_mass_h) - np.min(main_mass_h)
 
-    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
-        center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1])) ## cancel if you want the accuracy
     return center_of_mass, width, height, percentage
 
-def player_squat(center_of_mass,center_of_upper_mass,th=1,Height = 300):
-    delta = Height// th
+def jumping(Mario, th = 4):
+    if (time.time() - Mario.time_down > 2 and time.time() - Mario.time_up > 0.5) :
+        if ( Mario.last_center[1] - Mario.center_of_mass[1] > (Mario.Trashi.jumpi/100) ):
+            Mario.time_up = time.time()
+            return 'up'
+    else:
+        return 'center'
+
+def player_squat(center_of_mass,center_of_upper_mass,th=100,Height = 300):
+    delta = Height*100/ th
     y = center_of_mass[1]
 
     if center_of_upper_mass[1] > y - delta:
@@ -65,7 +71,7 @@ def player_squat(center_of_mass,center_of_upper_mass,th=1,Height = 300):
 def player_lean(center_of_mass,width, height, w = 640 , th = 4,mask = None):
     # calculate the threshold precentage
     #print("W=",w)
-    th = w*th//100
+    th = w*th//10000
     # width
     x = center_of_mass[0]
 
@@ -88,13 +94,6 @@ def player_lean(center_of_mass,width, height, w = 640 , th = 4,mask = None):
         return 'left',center_of_upper_mass
     return 'center', center_of_upper_mass
 
-def jumping(Mario):
-    if (time.time() - Mario.time_down > 2 and time.time() - Mario.time_up > 0.5) :
-        if ( Mario.last_center[1] - Mario.center_of_mass[1] > 4 ):
-            Mario.time_up = time.time()
-            return 'up'
-    else:
-        return 'center'
 
 def grabing(Mario):
     Time = time.time()
@@ -105,12 +104,13 @@ def grabing(Mario):
     Frames_Process.draw_spot_info(Mario.frame_with_red_green, green_location, "green")
     Frames_Process.draw_spot_info(Mario.frame_with_red_green, red_location, "red")
     bottom_height = Mario.center_of_mass[1] + Mario.height//2
-    limit_bottom_height = Mario.center_of_mass[1] + Mario.height//(2*5)
+    limit_bottom_height = Mario.center_of_mass[1] + Mario.height_of_person//(2*Mario.Trashi.grabi/100)
     if green_location != None :
         if limit_bottom_height < green_location[1]: # or limit_bottom_height < red_location[1] :
             print("Green grab, green_location =",green_location )
             print("bottom_height =",bottom_height ,"limit_bottom_height =",limit_bottom_height )
             Mario.right_grab = True
+            Mario.time_right_grab = time.time()
         else :
             Mario.right_grab = False
 
@@ -120,103 +120,11 @@ def grabing(Mario):
             print("Red Grab, red_location =",red_location )
             print("bottom_height =",bottom_height ,"limit_bottom_height =",limit_bottom_height )
             Mario.left_grab = True
+            Mario.time_left_grab = time.time()
         else :
             Mario.left_grab = False
 
 
-
-def player_control(mask,keyboard, Mario):
-
-    #center_of_mass, width, height = Mario.center_of_mass , Mario.width , Mario.height
-    lean = 'center'
-    squat = 0
-    ########dad
-    center_of_mass, width, height, percentage = get_player_position(mask)
-    mask = Region_mask(mask, center_of_mass, height, width)
-    Mario.mask = mask
-    Mario.center_of_mass = center_of_mass
-    Mario.width = width
-    Mario.height = height
-    #########
-    if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
-        center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
-        Mario.center_of_mass = center_of_mass
-        lean, center_of_upper_mass = player_lean(center_of_mass,width, height,w=Mario.width, mask=mask)
-        Mario.lean = lean
-        Mario.center_of_upper_mass = center_of_upper_mass
-        jumps = jumping(Mario)
-        Mario.jump = jumps
-        grabing(Mario)
-        if not np.isnan(center_of_upper_mass[0]) and not np.isnan(center_of_upper_mass[1]):
-            #squat = player_squat(center_of_mass,center_of_upper_mass,th=1,H=Mario.H)
-            squat = player_squat(center_of_mass,center_of_upper_mass,th=Mario.squat_th,Height =Mario.height_of_person)
-            Mario.squat = squat
-            #### Is it neccessary here ? yes
-            center_of_upper_mass = (round(center_of_upper_mass[0]), round(center_of_upper_mass[1]))
-            Mario.center_of_upper_mass = center_of_upper_mass
-
-    #print(lean)
-    if Mario.jump == 'up':
-        print("up")
-        keyboard.stop_long_press(Key.down)
-        keyboard.start_long_press(Key.up)
-
-    if Mario.time_right_grab < 2:
-        keyboard.start_long_press(Key.right)
-    if Mario.right_grab == True:
-        print("right grab")
-        ###keyboard.stop_long_press(Key.left) DO NOT USE
-        Mario.time_right_grab = time.time()
-        keyboard.start_long_press(Key.right)
-
-    if Mario.time_left_grab < 2:
-        keyboard.start_long_press(Key.left)
-    if Mario.left_grab == True:
-        print("left grab")
-        ####keyboard.stop_long_press(Key.right) DO NOT USE
-        Mario.time_left_grab = time.time()
-        keyboard.start_long_press(Key.left)
-
-    if squat == 'down':
-        print("down")
-        Mario.set_down()
-        keyboard.start_long_press(Key.down)
-    if squat == 0:
-        keyboard.stop_long_press(Key.down)
-    if lean == 'left':
-        print("left")
-        keyboard.stop_long_press("d")
-        keyboard.start_long_press("a")
-
-    if lean == 'right':
-        print("right")
-        keyboard.stop_long_press("a")
-        keyboard.start_long_press("d")
-
-
-    if lean == 'center':
-        #print("center")
-        keyboard.stop_long_press("a")
-        keyboard.stop_long_press("d")
-
-    '''    if Mario.jump == 'up':
-        print("up")
-        keyboard.press_and_release(Key.up)
-    if squat == 'down':
-        print("down")
-        Mario.set_down()
-        keyboard.press_and_release(Key.down)
-    if lean == 'left':
-        print("left")
-        keyboard.press_and_release('a')
-    if lean == 'right':
-        print("right")
-        keyboard.press_and_release('d')'''
-
-    Mario.previous_mask = mask
-    Mario.last_center = Mario.center_of_mass
-
-    # add controls here
 
 
 def Upper_Region_mask(mask,center_of_mass,height,width):
