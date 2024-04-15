@@ -1,7 +1,7 @@
 from pynput.keyboard import Key, Controller, Listener
 import threading
 import time
-# keyboard = class
+
 class KeyboardInterface:
     def __init__(self):
         self.keyboard = Controller()

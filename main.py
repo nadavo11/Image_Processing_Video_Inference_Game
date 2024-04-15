@@ -12,15 +12,15 @@ from Player import Player
 import sys
 import os
 
-#SOURCE = 'webcam'    #
-SOURCE = 'fake cam'
+SOURCE = 'webcam'    #
+#SOURCE = 'fake cam'
 def play(webcam_stream, background,Mario):
     #Get_player_height
     height_accepted = 0
     while height_accepted != 1:
         Mario.frame = webcam_stream.read()
         # Process the frame
-        Mario.mask = Frames_Process.filter_player(Mario.frame, background)
+        Mario.mask, Mario.mask_4color = Frames_Process.filter_player(Mario.frame, background)
         Mario.center_of_center, Mario.width, Mario.height_of_person, Mario.percentage = Player_Position.get_player_position(Mario.mask)
         # Display the output
         cv2.imshow('output', Mario.mask)
@@ -30,15 +30,23 @@ def play(webcam_stream, background,Mario):
             print("Mario.height_of_person = ", Mario.height_of_person,"Mario.center_of_center = ", Mario.center_of_center)
             height_accepted = 1
             break
+
+        if key & 0xFF == ord('3'):
+            Mario.height_of_person = 380
+            print("Mario.height_of_person = ", Mario.height_of_person,"Mario.center_of_center = ", Mario.center_of_center)
+            height_accepted = 1
+            break
     while True:
         # Capture the video frame
-        Mario.frame = webcam_stream.read()
+        frame = webcam_stream.read()
+        Mario.frame = frame
+        Mario.frame_with_red_green = frame.copy()
         # Process the frame
-        Mario.mask = Frames_Process.filter_player(Mario.frame, background)
+        Mario.mask, Mario.mask_4color = Frames_Process.filter_player(Mario.frame, background)
 
         Player_Position.player_control(Mario.mask,keyboard,Mario)
         #mask = filter_player(frame, backg1round)
-        grid = Frames_Process.grid_output(Mario.frame, background,Mario)
+        grid = Frames_Process.grid_output(frame, background,Mario)
 
         # Display the output
         cv2.imshow('output', grid)
@@ -81,6 +89,9 @@ Mario = Player()
 background = Frames_Process.scan_background(webcam_stream)
 play(webcam_stream, background,Mario)
 # After the loop release the cap object
-webcam_stream.vcap.release()
+if SOURCE != 'webcam':
+    webcam_stream.cap.release()
+else :
+    webcam_stream.vcap.release()
 # Destroy all the windows
 cv2.destroyAllWindows()

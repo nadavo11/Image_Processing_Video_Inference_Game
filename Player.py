@@ -17,7 +17,7 @@ class Player:
         self.height = None
         self.width = None
         self.height_of_person = None
-        self.squat_th = 8
+        self.squat_th = 7 ## Smaller -> more squats easy, larger -> less squatsd
         self.center_of_upper_mass = None
         self.upper_mask = None
         self.H = 480
@@ -28,6 +28,15 @@ class Player:
         self.time_down = time.time()
         self.time_up = time.time()
         self.center_of_center = None
+        ## X -> Width -> [0], Y -> Height -> [1]
+        self.mask_4color = None
+        self.green_center, self.green_size = None, None
+        self.red_center, self.red_size = None, None
+        self.frame_with_red_green = None
+        self.right_grab = None
+        self.left_grab = None
+        self.time_right_grab = time.time()
+        self.time_left_grab = time.time()
 
     def set_down(self):
         self.time_down = time.time()

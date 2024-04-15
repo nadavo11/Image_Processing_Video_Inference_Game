@@ -47,7 +47,48 @@ def find_color_mass(mask, min_area_threshold=150):
 
     return center_of_mass, size
 
+def get_green(Mario):
+    green_lower = np.array([40, 50, 50])
+    green_upper = np.array([80, 255, 255])
 
+    green_mask = create_color_mask(Mario.frame, green_lower, green_upper,Mario.mask_4color)
+    green_center, green_size = find_color_mass(green_mask)
+    return green_center, green_size
+
+def get_red(Mario):
+    # Define the color ranges (HSV format)
+    red_lower1 = np.array([0, 180, 100])
+    red_upper1 = np.array([10, 255, 255])
+
+    red_lower2 = np.array([160, 100, 100])
+    red_upper2 = np.array([179, 255, 255])
+
+    red_mask1 = create_color_mask(Mario.frame, red_lower1, red_upper1,Mario.mask_4color)
+    red_mask2 = create_color_mask(Mario.frame, red_lower2, red_upper2,Mario.mask_4color)
+    # Combine masks for red color
+    mask_red = cv2.bitwise_or(red_mask1, red_mask2)
+    # Find center of mass and size for red and green colors separately
+    red_center, red_size = find_color_mass(mask_red)
+    return red_center, red_size
+
+def get_green_and_red(Mario):
+    Mario.frame_with_red_green = (Mario.frame).copy()
+    green_center, green_size = get_green(Mario)
+    Mario.green_center, Mario.green_size = green_center, green_size
+    red_center, red_size = get_red(Mario)
+    Mario.red_center, Mario.red_size = red_center, red_size
+    # Draw circles at the center of masses
+    if red_center is not None:
+        cv2.circle(Mario.frame_with_red_green, red_center, 5, (0, 0, 255), -1)  # Red color for center
+        #cv2.putText(Mario.frame_with_red_green, f"Red Area: {red_size}", (red_center[0] - 50, red_center[1] - 20),
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+    if green_center is not None:
+        cv2.circle(Mario.frame_with_red_green, green_center, 5, (0, 255, 0), -1)  # Green color for center
+        #cv2.putText(Mario.frame_with_red_green, f"Green Area: {green_size}", (green_center[0] - 50, green_center[1] - 20),
+        #            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+'''
 # initializing and starting multi - thread webcam input stream
 if SOURCE != 'webcam':
     webcam_stream = fake_cam('./input.avi')
@@ -63,7 +104,7 @@ else:
 #cap = cv2.VideoCapture(0)  # Open default camera
 
 # Define the color ranges (HSV format)
-red_lower1 = np.array([0, 150, 100])
+red_lower1 = np.array([0, 180, 100])
 red_upper1 = np.array([10, 255, 255])
 
 red_lower2 = np.array([160, 100, 100])
@@ -107,3 +148,4 @@ while True:
 # Release the camera and close all windows
 webcam_stream.vcap.release()
 cv2.destroyAllWindows()
+'''

@@ -18,14 +18,15 @@ def filter_player(frame, background):
     diff_smoothed = cv2.GaussianBlur(diff_gray, (15, 15), 20)
 
     # Apply Median filter to further reduce noise
-    diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
-    diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
+    diff_smoothed1 = cv2.medianBlur(diff_smoothed, 9)
+    diff_smoothed = cv2.medianBlur(diff_smoothed1, 9)
     diff_smoothed = cv2.medianBlur(diff_smoothed, 9)
 
     # Threshold the diff image so that we get the foreground
     _, thresh = cv2.threshold(diff_smoothed, 25, 255, cv2.THRESH_BINARY)
+    _, thresh_for_color = cv2.threshold(diff_smoothed, 25, 255, cv2.THRESH_BINARY)
 
-    return thresh
+    return thresh, thresh_for_color
 
 
 def scan_background(webcam_stream):
@@ -111,6 +112,25 @@ def draw_rectangle(frame, mask,center_of_mass,center_of_upper_mass, width, heigh
     return frame_with_rectangle
 
 
+def draw_spot_info(framey, center,word = "center", color=(255, 0, 0)):
+    if center is not None:
+        # Draw circle at the center of mass
+        cv2.circle(framey, center, 5, color, -1)
+
+        # Write location of the mass
+        text = f"{word}: ({center[0]}, {center[1]})"
+        cv2.putText(framey, text, (center[0] - 50, center[1] - 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+
+def write_text(frame, text, color=(255, 255, 255),font_scale=1, thickness =4):
+    # Define the font and position
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    position = (10, 30)  # Adjust position as needed
+
+    # Write the text on the frame
+    cv2.putText(frame, text, position, font, font_scale, color,thickness, cv2.LINE_AA)
+
 def grid_output(frame, background, Mario):
     mask = Mario.mask
     #####
@@ -119,10 +139,12 @@ def grid_output(frame, background, Mario):
     # Convert masks to BGR for display purposes
     binary_image1 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
     binary_image2 = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR) ## It passes this one to display but calculate with Region mask
-    frame_with_rectangle = frame.copy()
+    frame_with_rectangles = frame.copy()
     #####
     if not np.isnan(center_of_mass[0]) and not np.isnan(center_of_mass[1]):
         center_of_mass = (round(center_of_mass[0]), round(center_of_mass[1]))
+        draw_spot_info(Mario.frame_with_red_green, center_of_mass, "middle")
+        draw_spot_info(Mario.frame_with_red_green, (center_of_mass[0],center_of_mass[1] + height//2), "limit")
         lean, center_of_upper_mass = Mario.lean, Mario.center_of_upper_mass
         if lean == 'left':
             # paint binary image2 white pixels green
@@ -136,13 +158,22 @@ def grid_output(frame, background, Mario):
                 # draw arrow down
                 binary_image2 = cv2.arrowedLine(binary_image2, center_of_upper_mass, center_of_mass, (0, 0, 255), 10,tipLength =0.5)
 
-            if Mario.jump == 'up':
+            if time.time() - Mario.time_up < 1:
                 binary_image2 = cv2.arrowedLine(binary_image2, center_of_mass, center_of_upper_mass, (0, 255, 0), 10,
                                                 tipLength=0.5)
-        frame_with_rectangle = draw_rectangle(frame, mask,center_of_mass,center_of_upper_mass, width, height)
+            draw_spot_info(Mario.frame_with_red_green, center_of_upper_mass, "upper")
+        frame_with_rectangles = draw_rectangle(frame, mask,center_of_mass,center_of_upper_mass, width, height)
+        if Mario.right_grab == True:
+            write_text(binary_image2, "Green Right Grab", color=(0, 255, 0), font_scale=1)
+            binary_image2 = cv2.arrowedLine(binary_image2, (400, 100), (600, 100), (0, 255, 0), 15,
+                                            tipLength=0.5)
+        elif Mario.left_grab == True:
+            write_text(binary_image2, "Red Left Grab", color=(0, 0, 255), font_scale=1)
+            binary_image2 = cv2.arrowedLine(binary_image2, (600, 100), (400, 100), (0, 0, 255), 15,
+                                            tipLength=0.5)
     # Prepare frames for display
-    frames = [background, frame, frame_with_rectangle, binary_image2]
-    resized_frames = [cv2.resize(frame, (320, 240)) for frame in frames]
+    frames = [background, Mario.frame_with_red_green, frame_with_rectangles, binary_image2]
+    resized_frames = frames #[cv2.resize(frame, (320, 240)) for frame in frames]
 
     # Combine frames into a grid
     top_row = np.hstack(resized_frames[:2])

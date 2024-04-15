@@ -16,7 +16,7 @@ if not ret:
 # Create a window to display the frame
 cv2.imshow("Frame", frame)
 '''
-frame = cv2.imread('green_and_red.png')
+frame = cv2.imread('green_and_red_2.png')
 cv2.imshow("Frame", frame)
 cv2.setMouseCallback("Frame", get_color)
 
