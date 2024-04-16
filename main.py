@@ -13,7 +13,7 @@ import sys
 import os
 import Player_Control
 
-#dSOURCE = 'input.avi'    #
+#SOURCE = 'input.avi'    #
 SOURCE = 'webcam'
 #SOURCE = 'fake cam'
 def play(webcam_stream, background,Mario):

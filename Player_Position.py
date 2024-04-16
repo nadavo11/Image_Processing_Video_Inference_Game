@@ -68,10 +68,10 @@ def player_squat(center_of_mass,center_of_upper_mass,th=100,Height = 300):
         #print("center_of_upper_mass[0]=", center_of_upper_mass[0], "y=", y, "y-th=", y - th, "th=", th)
         return 'down'
     return 0
-def player_lean(center_of_mass,width, height, w = 300 , th = 4,mask = None):
+def player_lean(center_of_mass,width, height, w = 300 , th = 10,mask = None):
     # calculate the threshold precentage
-    #print("W=",w)
-    delta = 10 ##w*th//10000
+    #print("W=",w)ddd
+    delta = th ##w*th//10000
     # width
     x = center_of_mass[0]
 
@@ -88,9 +88,9 @@ def player_lean(center_of_mass,width, height, w = 300 , th = 4,mask = None):
 
     # x,y are the center of x indices and y indices of mass pixels
     center_of_upper_mass = (np.average(uppermass_w), np.average(uppermass_h))
-    if center_of_upper_mass[0] > x + th:
+    if center_of_upper_mass[0] > x + delta:
         return 'right',center_of_upper_mass
-    if center_of_upper_mass[0] < x - th:
+    if center_of_upper_mass[0] < x - delta:
         return 'left',center_of_upper_mass
     return 'center', center_of_upper_mass
 
