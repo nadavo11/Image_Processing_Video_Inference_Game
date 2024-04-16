@@ -24,7 +24,7 @@ def filter_player(frame, background):
 
     # Threshold the diff image so that we get the foreground
     _, thresh = cv2.threshold(diff_smoothed, 25, 255, cv2.THRESH_BINARY)
-    _, thresh_for_color = cv2.threshold(diff_smoothed, 25, 255, cv2.THRESH_BINARY)
+    _, thresh_for_color = cv2.threshold(diff_smoothed1, 25, 255, cv2.THRESH_BINARY)
 
     return thresh, thresh_for_color
 
