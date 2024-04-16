@@ -127,6 +127,17 @@ def grabing(Mario):
             Mario.left_grab = False
 
 
+def faster(Mario):
+    green_location = Mario.green_center
+    red_location = Mario.red_center
+    ##[0]=w, ## [1]=h
+    if red_location != None and green_location != None :
+        if (np.abs(green_location[1] - red_location[1]) < 20) and np.abs(green_location[0] - red_location[0]) > 100 :
+            Mario.faster = True
+        else :
+            Mario.faster = False
+    else:
+        Mario.faster = False
 
 
 def Upper_Region_mask(mask,center_of_mass,height,width):
