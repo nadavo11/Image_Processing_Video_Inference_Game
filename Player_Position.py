@@ -132,7 +132,7 @@ def faster(Mario):
     red_location = Mario.red_center
     ##[0]=w, ## [1]=h
     if red_location != None and green_location != None :
-        if (np.abs(green_location[1] - red_location[1]) < 20) and np.abs(green_location[0] - red_location[0]) > 100 :
+        if (np.abs(green_location[1] - red_location[1]) < 20) and np.abs(green_location[0] - red_location[0]) > 150 :
             Mario.faster = True
         else :
             Mario.faster = False
